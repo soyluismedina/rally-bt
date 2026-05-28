@@ -99,7 +99,7 @@ export default function MatchCard({ match }: { match: Match }) {
 
       <form onSubmit={save}>
         <div className="mt-4 pt-3 border-t border-slate-200/60">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mr-1">
               Score
             </span>

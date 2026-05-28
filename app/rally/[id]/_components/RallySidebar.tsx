@@ -2,24 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-const navItems = [
-  {
-    href: (id: string) => `/rally/${id}`,
-    label: "Panel",
-    color: "bg-teal-500",
-  },
-  {
-    href: (id: string) => `/rally/${id}/participants`,
-    label: "Participantes",
-    color: "bg-sky-500",
-  },
-  {
-    href: (id: string) => `/rally/${id}/matches`,
-    label: "Partidas",
-    color: "bg-amber-500",
-  },
-] as const;
+import { navItems } from "./nav-items";
 
 export default function RallySidebar({
   rallyId,
@@ -31,7 +14,7 @@ export default function RallySidebar({
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 bg-white border-r border-slate-200 flex flex-col shrink-0">
+    <aside className="hidden md:flex w-64 bg-white border-r border-slate-200 flex-col shrink-0">
       <Link
         href={`/rally/${rallyId}`}
         className="flex items-center gap-3 px-5 h-16 border-b border-slate-100 hover:bg-slate-50 transition-colors"

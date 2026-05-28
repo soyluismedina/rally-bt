@@ -117,7 +117,7 @@ export default function ParticipantsView({
   };
 
   return (
-    <div className="grid grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 space-y-4">
         <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
           <span className="w-1.5 h-5 rounded-full bg-sky-500 inline-block" />
@@ -167,7 +167,7 @@ export default function ParticipantsView({
                   type="button"
                   disabled={isPendingDeletePlayer}
                   onClick={() => onDeletePlayer(p.id)}
-                  className="opacity-0 group-hover:opacity-100 text-xs text-slate-400 hover:text-red-600 font-medium px-2 py-1 rounded hover:bg-red-50 transition-all cursor-pointer disabled:opacity-40 inline-flex items-center gap-1"
+                  className="opacity-60 md:opacity-0 md:group-hover:opacity-100 text-xs text-slate-400 hover:text-red-600 font-medium px-2 py-1 rounded hover:bg-red-50 transition-all cursor-pointer disabled:opacity-40 inline-flex items-center gap-1"
                 >
                   {isPendingDeletePlayer && <Loader className="h-3 w-3" />}
                   Eliminar
@@ -264,7 +264,7 @@ export default function ParticipantsView({
                       type="button"
                       disabled={isPendingDeleteDupla}
                       onClick={() => onDeleteDupla(d.id)}
-                      className="opacity-0 group-hover:opacity-100 text-xs text-slate-400 hover:text-red-600 font-medium px-2 py-1 rounded hover:bg-red-50 transition-all cursor-pointer disabled:opacity-40 inline-flex items-center gap-1"
+                      className="opacity-60 md:opacity-0 md:group-hover:opacity-100 text-xs text-slate-400 hover:text-red-600 font-medium px-2 py-1 rounded hover:bg-red-50 transition-all cursor-pointer disabled:opacity-40 inline-flex items-center gap-1"
                     >
                       {isPendingDeleteDupla && <Loader className="h-3 w-3" />}
                       Eliminar
