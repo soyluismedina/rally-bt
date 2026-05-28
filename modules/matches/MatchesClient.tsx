@@ -1,19 +1,24 @@
 "use client";
 
-import { Match } from "@/types/matches";
+import Loader from "@/components/Loader";
+import { matchScoreSchema } from "@/modules/matches/schema";
 import { Dupla } from "@/types/dupla";
+import { Match } from "@/types/matches";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useTransition } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { updateMatch } from "./action";
 
 export default function MatchesClient({
   rallyId,
-  matches: initialMatches,
+  matches,
 }: {
   rallyId: string;
   matches: Match[];
 }) {
   const router = useRouter();
-  const [matches, setMatches] = useState(initialMatches);
 
   const rounds = useMemo(() => {
     const map = new Map<number, Match[]>();
@@ -70,16 +75,7 @@ export default function MatchesClient({
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {ms.map((m) => (
-                  <MatchCard
-                    key={m.id}
-                    match={m}
-                    rallyId={rallyId}
-                    onUpdate={(updated) => {
-                      setMatches((prev) =>
-                        prev.map((x) => (x.id === updated.id ? updated : x)),
-                      );
-                    }}
-                  />
+                  <MatchCard key={m.id} match={m} />
                 ))}
               </div>
             </div>
@@ -107,7 +103,6 @@ function DuplaLine({
           ? "bg-teal-100 ring-2 ring-teal-400 ring-offset-1"
           : "hover:bg-slate-50"
       }`}
-      // onClick={() => onSelectWinner(isWinner ? "" : duplaId)}
     >
       <div className="flex items-center gap-2 min-w-0">
         <div className="flex -space-x-2">
@@ -131,15 +126,21 @@ function DuplaLine({
   );
 }
 
-function MatchCard({
-  match,
-  rallyId,
-  onUpdate,
-}: {
-  match: Match;
-  rallyId: string;
-  onUpdate: (m: Match) => void;
-}) {
+function MatchCard({ match }: { match: Match }) {
+  const [isPending, startTransition] = useTransition();
+  const {
+    register,
+    formState: { errors },
+    handleSubmit,
+    formState,
+  } = useForm({
+    resolver: zodResolver(matchScoreSchema),
+    defaultValues: {
+      score1: match.score_1 || undefined,
+      score2: match.score_2 || undefined,
+    },
+  });
+  const router = useRouter();
   const courtColors = [
     {
       card: "border-teal-200 bg-gradient-to-br from-teal-50/60 to-white",
@@ -151,6 +152,32 @@ function MatchCard({
     },
   ];
   const c = courtColors[match.court % courtColors.length];
+
+  const save = handleSubmit((form) => {
+    try {
+      startTransition(async () => {
+        await updateMatch({
+          matchId: match.id,
+          match: {
+            ...match,
+            score_1: Number(form.score1) || null,
+            score_2: Number(form.score2) || null,
+            winner_id:
+              Number(form.score1) > Number(form.score2)
+                ? match.dupla_1.id
+                : match.dupla_2.id,
+          },
+        });
+        router.refresh();
+      });
+
+      toast.success("Partida actualizada");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Error al guardar la partida",
+      );
+    }
+  });
 
   return (
     <div className={`rounded-xl border-2 p-4 ${c.card}`}>
@@ -168,7 +195,6 @@ function MatchCard({
           duplaId={match.dupla_1.id}
           dupla={match.dupla_1}
           winnerId={match.winner_id}
-          // onSelectWinner={setWinnerId}
         />
 
         <div className="flex items-center justify-center gap-2 py-1">
@@ -183,37 +209,45 @@ function MatchCard({
           duplaId={match.dupla_2.id}
           dupla={match.dupla_2}
           winnerId={match.winner_id}
-          // onSelectWinner={setWinnerId}
         />
       </div>
 
-      {/* <div className="mt-4 pt-3 border-t border-slate-200/60">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mr-1">
-            Score
-          </span>
-          <input
-            className="w-14 border border-slate-300 rounded-lg px-2 py-1.5 text-sm text-center font-medium focus:outline-none focus:ring-2 focus:ring-teal-500/30"
-            placeholder="0"
-            value={score1}
-            onChange={(e) => setScore1(e.target.value)}
-          />
-          <span className="text-sm text-slate-400 font-medium">-</span>
-          <input
-            className="w-14 border border-slate-300 rounded-lg px-2 py-1.5 text-sm text-center font-medium focus:outline-none focus:ring-2 focus:ring-teal-500/30"
-            placeholder="0"
-            value={score2}
-            onChange={(e) => setScore2(e.target.value)}
-          />
-          <button
-            className="ml-auto bg-teal-600 hover:bg-teal-700 text-white px-4 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-            disabled={!hasChanged || saving}
-            onClick={save}
-          >
-            {saving ? "Guardando…" : "Guardar"}
-          </button>
+      <form onSubmit={save}>
+        <div className="mt-4 pt-3 border-t border-slate-200/60">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mr-1">
+              Score
+            </span>
+            <input
+              {...register("score1")}
+              className="w-14 border border-slate-300 rounded-lg px-2 py-1.5 text-sm text-center font-medium focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+              placeholder="0"
+              type="number"
+              datatype="number"
+            />
+            <span className="text-sm text-slate-400 font-medium">-</span>
+            <input
+              {...register("score2")}
+              className="w-14 border border-slate-300 rounded-lg px-2 py-1.5 text-sm text-center font-medium focus:outline-none focus:ring-2 focus:ring-teal-500/30"
+              placeholder="0"
+              type="number"
+            />
+            <button
+              type="submit"
+              disabled={!formState.isDirty}
+              className="ml-auto bg-teal-600 hover:bg-teal-700 text-white px-4 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+            >
+              {isPending && <Loader />}
+              {isPending ? "Guardando…" : "Guardar"}
+            </button>
+          </div>
+          {(errors.score1 || errors.score2) && (
+            <p className="text-xs text-red-500 mt-1">
+              Solo se permiten números
+            </p>
+          )}
         </div>
-      </div> */}
+      </form>
     </div>
   );
 }
