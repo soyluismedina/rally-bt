@@ -14,4 +14,9 @@ export const navItems = [
     label: "Partidas",
     color: "bg-amber-500",
   },
+  {
+    href: (id: string) => `/rally/${id}/results`,
+    label: "Resultados",
+    color: "bg-purple-500",
+  },
 ] as const;
