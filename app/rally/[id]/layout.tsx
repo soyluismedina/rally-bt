@@ -1,5 +1,6 @@
 import { createSupabase } from "@/lib/supabase/db";
 import { notFound } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
 import MobileNav from "./_components/MobileNav";
 import RallySidebar from "./_components/RallySidebar";
 
@@ -19,6 +20,17 @@ export default async function RallyLayout({
     .single();
 
   if (!rally) notFound();
+
+  const session = await auth();
+  const isSignedIn = !!session.userId;
+
+  if (!isSignedIn) {
+    return (
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 mx-auto w-full max-w-5xl">
+        {children}
+      </main>
+    );
+  }
 
   return (
     <div className="flex flex-1 min-h-0">
