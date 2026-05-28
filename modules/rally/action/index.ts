@@ -18,7 +18,7 @@ export async function createRally(data: {
 
   const supabase = await createSupabase();
   const { data: rally } = await supabase
-    .from("rallies")
+    .from("rally")
     .insert({
       name: parsed.name,
       date: parsed.date,
