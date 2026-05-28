@@ -45,6 +45,7 @@ export default function ShareQRModal({
             Compartir resultados
           </h3>
           <button
+            title="Cerrar"
             onClick={onClose}
             className="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
           >
