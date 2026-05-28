@@ -6,6 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import Loader from "@/components/Loader";
 import {
   addDupla,
   addPlayer,
@@ -19,6 +21,10 @@ import {
   type DuplaFormValues,
   type PlayerFormValues,
 } from "../schema";
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
 
 export default function ParticipantsView({
   rallyId,
@@ -52,10 +58,11 @@ export default function ParticipantsView({
     startTransitionAddPlayer(async () => {
       try {
         await addPlayer(rallyId, data.name);
-        router.refresh();
+        toast.success("Jugador agregado");
         playerForm.reset();
+        router.refresh();
       } catch (error) {
-        console.error({ error });
+        toast.error(getErrorMessage(error, "Error al agregar el jugador"));
       }
     });
   };
@@ -64,9 +71,10 @@ export default function ParticipantsView({
     startTransitionDeletePlayer(async () => {
       try {
         await removePlayer(rallyId, playerId);
+        toast.success("Jugador eliminado");
         router.refresh();
       } catch (error) {
-        console.error(error);
+        toast.error(getErrorMessage(error, "Error al eliminar el jugador"));
       }
     });
   };
@@ -75,10 +83,11 @@ export default function ParticipantsView({
     startTransitionAddDupla(async () => {
       try {
         await addDupla(rallyId, data.player1Id, data.player2Id);
+        toast.success("Dupla agregada");
         duplaForm.reset();
         router.refresh();
       } catch (error) {
-        console.error(error);
+        toast.error(getErrorMessage(error, "Error al agregar la dupla"));
       }
     });
   };
@@ -87,9 +96,10 @@ export default function ParticipantsView({
     startTransitionDeleteDupla(async () => {
       try {
         await removeDupla(rallyId, duplaId);
+        toast.success("Dupla eliminada");
         router.refresh();
       } catch (error) {
-        console.error(error);
+        toast.error(getErrorMessage(error, "Error al eliminar la dupla"));
       }
     });
   };
@@ -98,9 +108,10 @@ export default function ParticipantsView({
     startTransitionGenerate(async () => {
       try {
         await generateTournamentMatches(rallyId);
+        toast.success("Partidas generadas correctamente");
         router.push(`/rally/${rallyId}/matches`);
       } catch (error) {
-        console.error(error);
+        toast.error(getErrorMessage(error, "Error al generar las partidas"));
       }
     });
   };
@@ -126,8 +137,9 @@ export default function ParticipantsView({
           <button
             type="submit"
             disabled={isPendingAddPlayer}
-            className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all cursor-pointer disabled:opacity-40"
+            className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2"
           >
+            {isPendingAddPlayer && <Loader />}
             Agregar
           </button>
         </form>
@@ -155,8 +167,9 @@ export default function ParticipantsView({
                   type="button"
                   disabled={isPendingDeletePlayer}
                   onClick={() => onDeletePlayer(p.id)}
-                  className="opacity-0 group-hover:opacity-100 text-xs text-slate-400 hover:text-red-600 font-medium px-2 py-1 rounded hover:bg-red-50 transition-all cursor-pointer"
+                  className="opacity-0 group-hover:opacity-100 text-xs text-slate-400 hover:text-red-600 font-medium px-2 py-1 rounded hover:bg-red-50 transition-all cursor-pointer disabled:opacity-40 inline-flex items-center gap-1"
                 >
+                  {isPendingDeletePlayer && <Loader className="h-3 w-3" />}
                   Eliminar
                 </button>
               </li>
@@ -216,8 +229,9 @@ export default function ParticipantsView({
               <button
                 type="submit"
                 disabled={isPendingAddDupla}
-                className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all cursor-pointer disabled:opacity-40"
+                className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2"
               >
+                {isPendingAddDupla && <Loader />}
                 Agregar Dupla
               </button>
             </form>
@@ -250,8 +264,9 @@ export default function ParticipantsView({
                       type="button"
                       disabled={isPendingDeleteDupla}
                       onClick={() => onDeleteDupla(d.id)}
-                      className="opacity-0 group-hover:opacity-100 text-xs text-slate-400 hover:text-red-600 font-medium px-2 py-1 rounded hover:bg-red-50 transition-all cursor-pointer"
+                      className="opacity-0 group-hover:opacity-100 text-xs text-slate-400 hover:text-red-600 font-medium px-2 py-1 rounded hover:bg-red-50 transition-all cursor-pointer disabled:opacity-40 inline-flex items-center gap-1"
                     >
+                      {isPendingDeleteDupla && <Loader className="h-3 w-3" />}
                       Eliminar
                     </button>
                   </li>
@@ -264,8 +279,9 @@ export default function ParticipantsView({
           type="button"
           disabled={duplas?.length < 2 || isPendingGenerate}
           onClick={onGenerate}
-          className="w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl text-base font-bold shadow-sm hover:shadow-md transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl text-base font-bold shadow-sm hover:shadow-md transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
         >
+          {isPendingGenerate && <Loader />}
           {isPendingGenerate ? "Generando..." : "Generar Partidas"}
         </button>
       </section>

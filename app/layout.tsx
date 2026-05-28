@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 import {
   ClerkProvider,
@@ -88,6 +89,14 @@ export default function RootLayout({
             </div>
           </header>
           {children}
+          <Toaster
+            position="bottom-right"
+            richColors
+            closeButton
+            toastOptions={{
+              duration: 3000,
+            }}
+          />
         </ClerkProvider>
       </body>
     </html>

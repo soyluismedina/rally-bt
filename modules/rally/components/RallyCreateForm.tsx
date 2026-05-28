@@ -2,9 +2,11 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import { rallySchema, type RallyFormValues } from "@/modules/rally/schema";
 import { createRally } from "@/modules/rally/action";
 import { useTransition } from "react";
+import Loader from "@/components/Loader";
 
 export default function RallyCreateForm() {
   const [isPending, startTransition] = useTransition();
@@ -21,9 +23,12 @@ export default function RallyCreateForm() {
     startTransition(async () => {
       try {
         await createRally(data);
+        toast.success("Rally creado correctamente");
         reset();
       } catch (error) {
-        console.error(error);
+        toast.error(
+          error instanceof Error ? error.message : "Error al crear el rally",
+        );
       }
     });
   };
@@ -90,8 +95,9 @@ export default function RallyCreateForm() {
       <button
         type="submit"
         disabled={isPending}
-        className="w-full bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all cursor-pointer disabled:opacity-40"
+        className="w-full bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
       >
+        {isPending && <Loader />}
         {isPending ? "Creando..." : "Crear Rally"}
       </button>
     </form>
