@@ -1,37 +1,30 @@
 "use client";
 
-import { Player } from "@/types/player";
+import { Match } from "@/types/matches";
+import { Dupla } from "@/types/dupla";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-
-type MatchWithPlayers = {
-  id: string;
-  dupla1: Player;
-  dupla2: Player;
-  score1: number | null;
-  score2: number | null;
-};
+import { useMemo, useState } from "react";
 
 export default function MatchesClient({
   rallyId,
   matches: initialMatches,
 }: {
   rallyId: string;
-  matches: MatchWithPlayers[];
+  matches: Match[];
 }) {
   const router = useRouter();
   const [matches, setMatches] = useState(initialMatches);
 
-  // const rounds = useMemo(() => {
-  //   const map = new Map<number, MatchWithPlayers[]>();
-  //   for (const m of matches) {
-  //     if (!map.has(m.round)) map.set(m.round, []);
-  //     map.get(m.round)!.push(m);
-  //   }
-  //   return Array.from(map.entries())
-  //     .sort(([a], [b]) => a - b)
-  //     .map(([round, ms]) => ({ round, matches: ms }));
-  // }, [matches]);
+  const rounds = useMemo(() => {
+    const map = new Map<number, Match[]>();
+    for (const m of matches) {
+      if (!map.has(m.round)) map.set(m.round, []);
+      map.get(m.round)!.push(m);
+    }
+    return Array.from(map.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([round, ms]) => ({ round, matches: ms }));
+  }, [matches]);
 
   if (matches.length === 0) {
     return (
@@ -99,16 +92,12 @@ export default function MatchesClient({
 
 function DuplaLine({
   duplaId,
-  player1,
-  player2,
+  dupla,
   winnerId,
-  onSelectWinner,
 }: {
   duplaId: string;
-  player1: Player;
-  player2: Player;
+  dupla: Dupla;
   winnerId: string;
-  onSelectWinner: (id: string) => void;
 }) {
   const isWinner = winnerId === duplaId;
   return (
@@ -118,19 +107,19 @@ function DuplaLine({
           ? "bg-teal-100 ring-2 ring-teal-400 ring-offset-1"
           : "hover:bg-slate-50"
       }`}
-      onClick={() => onSelectWinner(isWinner ? "" : duplaId)}
+      // onClick={() => onSelectWinner(isWinner ? "" : duplaId)}
     >
       <div className="flex items-center gap-2 min-w-0">
         <div className="flex -space-x-2">
           <span className="w-7 h-7 rounded-full bg-teal-500 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white">
-            {player1.name.charAt(0).toUpperCase()}
+            {dupla.player_1.name.charAt(0).toUpperCase()}
           </span>
           <span className="w-7 h-7 rounded-full bg-cyan-500 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white">
-            {player2.name.charAt(0).toUpperCase()}
+            {dupla.player_2.name.charAt(0).toUpperCase()}
           </span>
         </div>
         <span className="text-sm font-semibold text-slate-800 truncate">
-          {player1.name} & {player2.name}
+          {dupla.player_1.name} & {dupla.player_2.name}
         </span>
       </div>
       {isWinner && (
@@ -147,9 +136,9 @@ function MatchCard({
   rallyId,
   onUpdate,
 }: {
-  match: MatchWithPlayers;
+  match: Match;
   rallyId: string;
-  onUpdate: (m: MatchWithPlayers) => void;
+  onUpdate: (m: Match) => void;
 }) {
   const courtColors = [
     {
@@ -162,32 +151,6 @@ function MatchCard({
     },
   ];
   const c = courtColors[match.court % courtColors.length];
-
-  const [score1, setScore1] = useState(match.score1?.toString() ?? "");
-  const [score2, setScore2] = useState(match.score2?.toString() ?? "");
-  const [winnerId, setWinnerId] = useState(match.winnerId ?? "");
-  const [saving, setSaving] = useState(false);
-
-  const hasChanged =
-    (score1 || "") !== (match.score1?.toString() ?? "") ||
-    (score2 || "") !== (match.score2?.toString() ?? "") ||
-    (winnerId || "") !== (match.winnerId ?? "");
-
-  async function save() {
-    setSaving(true);
-    const res = await fetch(`/api/rally/${rallyId}/matches/${match.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        score1: score1 || null,
-        score2: score2 || null,
-        winnerId: winnerId || null,
-      }),
-    });
-    const updated = await res.json();
-    onUpdate(updated);
-    setSaving(false);
-  }
 
   return (
     <div className={`rounded-xl border-2 p-4 ${c.card}`}>
@@ -202,11 +165,10 @@ function MatchCard({
 
       <div className="space-y-1">
         <DuplaLine
-          duplaId={match.dupla1Id}
-          player1={match.dupla1.player1}
-          player2={match.dupla1.player2}
-          winnerId={winnerId}
-          onSelectWinner={setWinnerId}
+          duplaId={match.dupla_1.id}
+          dupla={match.dupla_1}
+          winnerId={match.winner_id}
+          // onSelectWinner={setWinnerId}
         />
 
         <div className="flex items-center justify-center gap-2 py-1">
@@ -218,15 +180,14 @@ function MatchCard({
         </div>
 
         <DuplaLine
-          duplaId={match.dupla2Id}
-          player1={match.dupla2.player1}
-          player2={match.dupla2.player2}
-          winnerId={winnerId}
-          onSelectWinner={setWinnerId}
+          duplaId={match.dupla_2.id}
+          dupla={match.dupla_2}
+          winnerId={match.winner_id}
+          // onSelectWinner={setWinnerId}
         />
       </div>
 
-      <div className="mt-4 pt-3 border-t border-slate-200/60">
+      {/* <div className="mt-4 pt-3 border-t border-slate-200/60">
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mr-1">
             Score
@@ -252,7 +213,7 @@ function MatchCard({
             {saving ? "Guardando…" : "Guardar"}
           </button>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

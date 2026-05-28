@@ -1,30 +1,29 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  playerSchema,
-  duplaSchema,
-  type PlayerFormValues,
-  type DuplaFormValues,
-} from "../schema";
-import {
-  addPlayer,
-  removePlayer,
-  addDupla,
-  removeDupla,
-  generateTournamentMatches,
-} from "../action";
-import { Player } from "@/types/player";
 import { Dupla } from "@/types/dupla";
+import { Player } from "@/types/player";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
+import { useTransition } from "react";
+import { useForm } from "react-hook-form";
+import {
+  addDupla,
+  addPlayer,
+  generateTournamentMatches,
+  removeDupla,
+  removePlayer,
+} from "../action";
+import {
+  duplaSchema,
+  playerSchema,
+  type DuplaFormValues,
+  type PlayerFormValues,
+} from "../schema";
 
 export default function ParticipantsView({
   rallyId,
   players,
   duplas,
-  hasMatches: initialHasMatches,
 }: {
   rallyId: string;
   players: Player[];
@@ -32,8 +31,11 @@ export default function ParticipantsView({
   hasMatches: boolean;
 }) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const [hasMatches, setHasMatches] = useState(initialHasMatches);
+  const [isPendingAddPlayer, startTransitionAddPlayer] = useTransition();
+  const [isPendingDeletePlayer, startTransitionDeletePlayer] = useTransition();
+  const [isPendingAddDupla, startTransitionAddDupla] = useTransition();
+  const [isPendingDeleteDupla, startTransitionDeleteDupla] = useTransition();
+  const [isPendingGenerate, startTransitionGenerate] = useTransition();
 
   const playerForm = useForm<PlayerFormValues>({
     resolver: zodResolver(playerSchema),
@@ -47,7 +49,7 @@ export default function ParticipantsView({
   const p2Watch = duplaForm.watch("player2Id");
 
   const onAddPlayer = (data: PlayerFormValues) => {
-    startTransition(async () => {
+    startTransitionAddPlayer(async () => {
       try {
         await addPlayer(rallyId, data.name);
         router.refresh();
@@ -59,7 +61,7 @@ export default function ParticipantsView({
   };
 
   const onDeletePlayer = (playerId: string) => {
-    startTransition(async () => {
+    startTransitionDeletePlayer(async () => {
       try {
         await removePlayer(rallyId, playerId);
         router.refresh();
@@ -70,8 +72,7 @@ export default function ParticipantsView({
   };
 
   const onAddDupla = (data: DuplaFormValues) => {
-    console.log({ data });
-    startTransition(async () => {
+    startTransitionAddDupla(async () => {
       try {
         await addDupla(rallyId, data.player1Id, data.player2Id);
         duplaForm.reset();
@@ -83,7 +84,7 @@ export default function ParticipantsView({
   };
 
   const onDeleteDupla = (duplaId: string) => {
-    startTransition(async () => {
+    startTransitionDeleteDupla(async () => {
       try {
         await removeDupla(rallyId, duplaId);
         router.refresh();
@@ -94,10 +95,9 @@ export default function ParticipantsView({
   };
 
   const onGenerate = () => {
-    startTransition(async () => {
+    startTransitionGenerate(async () => {
       try {
         await generateTournamentMatches(rallyId);
-        setHasMatches(true);
         router.push(`/rally/${rallyId}/matches`);
       } catch (error) {
         console.error(error);
@@ -125,7 +125,7 @@ export default function ParticipantsView({
           />
           <button
             type="submit"
-            disabled={isPending}
+            disabled={isPendingAddPlayer}
             className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all cursor-pointer disabled:opacity-40"
           >
             Agregar
@@ -153,6 +153,7 @@ export default function ParticipantsView({
                 </span>
                 <button
                   type="button"
+                  disabled={isPendingDeletePlayer}
                   onClick={() => onDeletePlayer(p.id)}
                   className="opacity-0 group-hover:opacity-100 text-xs text-slate-400 hover:text-red-600 font-medium px-2 py-1 rounded hover:bg-red-50 transition-all cursor-pointer"
                 >
@@ -214,7 +215,7 @@ export default function ParticipantsView({
               </div>
               <button
                 type="submit"
-                disabled={isPending}
+                disabled={isPendingAddDupla}
                 className="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-all cursor-pointer disabled:opacity-40"
               >
                 Agregar Dupla
@@ -243,10 +244,11 @@ export default function ParticipantsView({
                     className="group flex items-center justify-between rounded-lg px-3 py-2 hover:bg-slate-50"
                   >
                     <span className="text-sm font-medium text-slate-800">
-                      {d.players[0].name} + {d.players[1].name}
+                      {d.player_1.name} + {d.player_2.name}
                     </span>
                     <button
                       type="button"
+                      disabled={isPendingDeleteDupla}
                       onClick={() => onDeleteDupla(d.id)}
                       className="opacity-0 group-hover:opacity-100 text-xs text-slate-400 hover:text-red-600 font-medium px-2 py-1 rounded hover:bg-red-50 transition-all cursor-pointer"
                     >
@@ -260,15 +262,11 @@ export default function ParticipantsView({
         )}
         <button
           type="button"
-          disabled={duplas?.length < 2 || isPending}
+          disabled={duplas?.length < 2 || isPendingGenerate}
           onClick={onGenerate}
           className="w-full bg-violet-600 hover:bg-violet-700 text-white py-3 rounded-xl text-base font-bold shadow-sm hover:shadow-md transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {isPending
-            ? "Generando..."
-            : hasMatches
-              ? "Regenerar Partidas"
-              : "Generar Partidas"}
+          {isPendingGenerate ? "Generando..." : "Generar Partidas"}
         </button>
       </section>
     </div>

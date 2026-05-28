@@ -9,7 +9,7 @@ export default async function ParticipantsPage({
   const { id } = await params;
   const rallyId = id;
   const supabase = await createSupabase();
-  const [playersRes, duplasRes, matchesRes] = await Promise.all([
+  const [{ data: players }, { data: duplas }, matchesRes] = await Promise.all([
     supabase.from("player").select().eq("rally_id", rallyId),
     supabase.from("dupla").select().eq("rally_id", rallyId),
     supabase
@@ -17,21 +17,12 @@ export default async function ParticipantsPage({
       .select("*", { count: "exact", head: true })
       .eq("rally_id", rallyId),
   ]);
-  console.log({ playersRes, duplas: duplasRes.data, matchesRes });
-
-  const players = playersRes.data ?? [];
-  const duplas = (duplasRes.data ?? []).map((d) => ({
-    id: d.id,
-    players: [d.player_1, d.player_2],
-  }));
-
-  console.log({ duplas });
 
   return (
     <ParticipantsView
       rallyId={rallyId}
-      players={players}
-      duplas={duplas}
+      players={players ?? []}
+      duplas={duplas ?? []}
       hasMatches={(matchesRes.count ?? 0) > 0}
     />
   );

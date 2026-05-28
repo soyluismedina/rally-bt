@@ -1,40 +1,74 @@
+import { Dupla } from "@/types/dupla";
+
 const MAX_CANCHAS = 2;
 
-export type MatchData = { dupla1Idx: number; dupla2Idx: number; round: number; court: number };
+export type MatchData = {
+  dupla_1: Dupla;
+  dupla_2: Dupla;
+  round: number;
+  court: number;
+};
 
-export function generateMatches(cantidadDuplas: number): MatchData[] {
-  if (cantidadDuplas < 2) return [];
+export function generateMatches(duplas: Dupla[]): MatchData[] {
+  if (duplas.length < 2) return [];
 
-  const todosPares: [number, number][] = [];
-  for (let i = 0; i < cantidadDuplas; i++) {
-    for (let j = i + 1; j < cantidadDuplas; j++) {
-      todosPares.push([i, j]);
-    }
-  }
+  const n = duplas.length;
+  const matchesPlayed = new Array(n).fill(0);
+  const played = new Set<string>();
 
   const partidas: MatchData[] = [];
-  const pendientes = [...todosPares];
   let ronda = 0;
 
-  while (pendientes.length > 0) {
+  const totalMatches = (n * (n - 1)) / 2;
+
+  while (played.size < totalMatches) {
     const rondaActual: [number, number][] = [];
     const ocupadas = new Set<number>();
 
-    for (let i = 0; i < pendientes.length && rondaActual.length < MAX_CANCHAS; i++) {
-      const [a, b] = pendientes[i];
-      if (!ocupadas.has(a) && !ocupadas.has(b)) {
-        ocupadas.add(a);
-        ocupadas.add(b);
-        rondaActual.push([a, b]);
-        pendientes.splice(i, 1);
-        i--;
+    const available = Array.from({ length: n }, (_, i) => i).sort(
+      (a, b) => matchesPlayed[a] - matchesPlayed[b],
+    );
+
+    for (const i of available) {
+      if (ocupadas.has(i)) continue;
+      if (rondaActual.length >= MAX_CANCHAS) break;
+
+      let bestJ = -1;
+      let bestScore = Infinity;
+
+      for (let j = 0; j < n; j++) {
+        if (j === i || ocupadas.has(j)) continue;
+        const key = i < j ? `${i},${j}` : `${j},${i}`;
+        if (played.has(key)) continue;
+        if (matchesPlayed[j] < bestScore) {
+          bestScore = matchesPlayed[j];
+          bestJ = j;
+        }
+      }
+
+      if (bestJ !== -1) {
+        ocupadas.add(i);
+        ocupadas.add(bestJ);
+        rondaActual.push([i, bestJ]);
+        const key = i < bestJ ? `${i},${bestJ}` : `${bestJ},${i}`;
+        played.add(key);
       }
     }
 
     if (rondaActual.length === 0) break;
 
+    rondaActual.forEach(([a, b]) => {
+      matchesPlayed[a]++;
+      matchesPlayed[b]++;
+    });
+
     rondaActual.forEach(([a, b], ci) => {
-      partidas.push({ dupla1Idx: a, dupla2Idx: b, round: ronda, court: ci });
+      partidas.push({
+        dupla_1: duplas[a],
+        dupla_2: duplas[b],
+        round: ronda,
+        court: ci,
+      });
     });
     ronda++;
   }
