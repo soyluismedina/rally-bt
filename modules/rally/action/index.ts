@@ -57,3 +57,33 @@ export async function updateRally(
   revalidatePath(`/rally/${rallyId}`);
   revalidatePath("/");
 }
+
+export async function deleteRally(rallyId: string) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("No autenticado");
+
+  const supabase = await createSupabase();
+
+  const { error: matchesError } = await supabase
+    .from("match")
+    .delete()
+    .eq("rally_id", rallyId);
+  if (matchesError) throw new Error(matchesError.message);
+
+  const { error: duplasError } = await supabase
+    .from("dupla")
+    .delete()
+    .eq("rally_id", rallyId);
+  if (duplasError) throw new Error(duplasError.message);
+
+  const { error: playersError } = await supabase
+    .from("player")
+    .delete()
+    .eq("rally_id", rallyId);
+  if (playersError) throw new Error(playersError.message);
+
+  const { error } = await supabase.from("rally").delete().eq("id", rallyId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/");
+}
