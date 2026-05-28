@@ -88,11 +88,23 @@ export default async function ResultsPage({
     .order("round", { ascending: true })
     .order("court", { ascending: true });
 
+  const { data: rally } = await supabase
+    .from("rally")
+    .select("name, date, place")
+    .eq("id", id)
+    .single();
+
   if (!matches) {
-    return <ResultsView standings={[]} matches={[]} />;
+    return <ResultsView standings={[]} matches={[]} rally={rally} />;
   }
 
   const standings = computeStandings(matches as unknown as Match[]);
 
-  return <ResultsView standings={standings} matches={matches as unknown as Match[]} />;
+  return (
+    <ResultsView
+      standings={standings}
+      matches={matches as unknown as Match[]}
+      rally={rally}
+    />
+  );
 }

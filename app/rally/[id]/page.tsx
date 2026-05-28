@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createSupabase } from "@/lib/supabase/db";
+import RallyDashboardHeader from "@/modules/rally/components/RallyDashboardHeader";
 
 export default async function RallyDashboard({
   params,
@@ -35,12 +36,12 @@ export default async function RallyDashboard({
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <header>
-        <h1 className="text-2xl font-bold text-slate-900">{rally.name}</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          {rally.date} &middot; {rally.place}
-        </p>
-      </header>
+      <RallyDashboardHeader
+        rallyId={rally.id}
+        name={rally.name}
+        date={rally.date}
+        place={rally.place}
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Link

@@ -1,7 +1,7 @@
 import { Webhook } from "svix";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { WebhookEvent } from "@clerk/nextjs/server";
-import { getSupabase } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
@@ -39,10 +39,12 @@ export async function POST(req: Request) {
 
   const eventType = evt.type;
 
+  const supabase = createClient(await cookies());
+
   if (eventType === "user.created") {
     const { id, email_addresses, first_name, last_name } = evt.data;
 
-    await getSupabase()
+    await supabase
       .from("users")
       .insert({
         id,
@@ -54,7 +56,7 @@ export async function POST(req: Request) {
   if (eventType === "user.updated") {
     const { id, first_name, last_name } = evt.data;
 
-    await getSupabase()
+    await supabase
       .from("users")
       .update({ name: `${first_name} ${last_name}` })
       .eq("id", id);
@@ -63,7 +65,7 @@ export async function POST(req: Request) {
   if (eventType === "user.deleted") {
     const { id } = evt.data;
 
-    await getSupabase().from("users").delete().eq("id", id);
+    await supabase.from("users").delete().eq("id", id);
   }
 
   return new Response("", { status: 200 });

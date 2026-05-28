@@ -32,3 +32,28 @@ export async function createRally(data: {
 
   return rally as unknown as Rally;
 }
+
+export async function updateRally(
+  rallyId: string,
+  data: { name: string; date: string; place: string },
+) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("No autenticado");
+
+  const parsed = rallySchema.parse(data);
+
+  const supabase = await createSupabase();
+  const { error } = await supabase
+    .from("rally")
+    .update({
+      name: parsed.name,
+      date: parsed.date,
+      place: parsed.place,
+    })
+    .eq("id", rallyId);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/rally/${rallyId}`);
+  revalidatePath("/");
+}

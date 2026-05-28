@@ -63,12 +63,20 @@ function DuplaLabel({
   );
 }
 
+type RallyInfo = {
+  name: string | null;
+  date: string | null;
+  place: string | null;
+};
+
 export default function ResultsView({
   standings,
   matches,
+  rally,
 }: {
   standings: Standing[];
   matches: Match[];
+  rally: RallyInfo | null;
 }) {
   const rounds = useMemo(() => {
     const map = new Map<number, Match[]>();
@@ -83,6 +91,20 @@ export default function ResultsView({
 
   return (
     <div className="space-y-8">
+      {rally?.name && (
+        <div className="text-center pb-2">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+            {rally.name}
+          </h1>
+          {rally.date && (
+            <p className="text-sm text-slate-500 mt-1">
+              {new Date(rally.date).toLocaleDateString("es")}
+              {rally.place ? ` · ${rally.place}` : null}
+            </p>
+          )}
+        </div>
+      )}
+
       <section>
         <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2 mb-4">
           <span className="w-1.5 h-5 rounded-full bg-yellow-500 inline-block" />
