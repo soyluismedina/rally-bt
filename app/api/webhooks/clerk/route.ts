@@ -44,17 +44,14 @@ export async function POST(req: Request) {
   }
 
   const eventType = evt.type;
-  console.log({ eventType });
   const supabase = createAdminClient();
 
   if (eventType === "user.created") {
-    const { id, email_addresses, first_name, last_name, image_url } = evt.data;
-    console.log({ id, email_addresses, first_name, last_name, image_url });
+    const { id, email_addresses, first_name, last_name } = evt.data;
     const { error } = await supabase.from("user").insert({
       id,
       email: email_addresses?.[0]?.email_address ?? "",
       name: [first_name, last_name].filter(Boolean).join(" ") || null,
-      image_url,
     });
 
     if (error) {
@@ -68,13 +65,12 @@ export async function POST(req: Request) {
   }
 
   if (eventType === "user.updated") {
-    const { id, first_name, last_name, image_url, email_addresses } = evt.data;
+    const { id, first_name, last_name, email_addresses } = evt.data;
 
     const updates: Record<string, string | null> = {
       name: [first_name, last_name].filter(Boolean).join(" ") || null,
     };
 
-    if (image_url) updates.image_url = image_url;
     if (email_addresses?.[0]?.email_address) {
       updates.email = email_addresses[0].email_address;
     }
