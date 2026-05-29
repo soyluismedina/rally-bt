@@ -90,6 +90,63 @@ export async function POST(req: Request) {
   if (eventType === "user.deleted") {
     const { id } = evt.data;
 
+    const { data: rallies } = await supabase
+      .from("rally")
+      .select("id")
+      .eq("author_id", id);
+
+    if (rallies && rallies.length > 0) {
+      const rallyIds = rallies.map((r) => r.id);
+
+      const { error: matchesError } = await supabase
+        .from("match")
+        .delete()
+        .in("rally_id", rallyIds);
+
+      if (matchesError) {
+        return Response.json(
+          { error: `Error al eliminar matches: ${matchesError.message}` },
+          { status: 500 },
+        );
+      }
+
+      const { error: duplasError } = await supabase
+        .from("dupla")
+        .delete()
+        .in("rally_id", rallyIds);
+
+      if (duplasError) {
+        return Response.json(
+          { error: `Error al eliminar duplas: ${duplasError.message}` },
+          { status: 500 },
+        );
+      }
+
+      const { error: playersError } = await supabase
+        .from("player")
+        .delete()
+        .in("rally_id", rallyIds);
+
+      if (playersError) {
+        return Response.json(
+          { error: `Error al eliminar players: ${playersError.message}` },
+          { status: 500 },
+        );
+      }
+
+      const { error: ralliesError } = await supabase
+        .from("rally")
+        .delete()
+        .in("id", rallyIds);
+
+      if (ralliesError) {
+        return Response.json(
+          { error: `Error al eliminar rallies: ${ralliesError.message}` },
+          { status: 500 },
+        );
+      }
+    }
+
     const { error } = await supabase.from("user").delete().eq("id", id);
 
     if (error) {
