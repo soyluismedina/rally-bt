@@ -1,14 +1,14 @@
 import { Webhook } from "svix";
-import { cookies, headers } from "next/headers";
+import { headers } from "next/headers";
 import { WebhookEvent } from "@clerk/nextjs/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(req: Request) {
-  const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
+  const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SIGNING_SECRET;
 
   if (!WEBHOOK_SECRET) {
     return new Response(
-      "Error: Por favor añade el WEBHOOK_SECRET en los .env",
+      "Error: Por favor añade el CLERK_WEBHOOK_SIGNING_SECRET en los .env",
       { status: 500 },
     );
   }
@@ -38,34 +38,57 @@ export async function POST(req: Request) {
   }
 
   const eventType = evt.type;
-
-  const supabase = createClient(await cookies());
+  console.log({ eventType });
+  const supabase = createAdminClient();
 
   if (eventType === "user.created") {
-    const { id, email_addresses, first_name, last_name } = evt.data;
+    const { id, email_addresses, first_name, last_name, image_url } = evt.data;
+    console.log({ id, email_addresses, first_name, last_name, image_url });
+    const { error } = await supabase.from("user").insert({
+      id,
+      email: email_addresses?.[0]?.email_address ?? "",
+      name: [first_name, last_name].filter(Boolean).join(" ") || null,
+      image_url,
+    });
 
-    await supabase
-      .from("users")
-      .insert({
-        id,
-        email: email_addresses[0].email_address,
-        name: `${first_name} ${last_name}`,
+    if (error) {
+      return new Response(`Error al crear usuario: ${error.message}`, {
+        status: 500,
       });
+    }
   }
 
   if (eventType === "user.updated") {
-    const { id, first_name, last_name } = evt.data;
+    const { id, first_name, last_name, image_url, email_addresses } = evt.data;
 
-    await supabase
-      .from("users")
-      .update({ name: `${first_name} ${last_name}` })
-      .eq("id", id);
+    const updates: Record<string, string | null> = {
+      name: [first_name, last_name].filter(Boolean).join(" ") || null,
+    };
+
+    if (image_url) updates.image_url = image_url;
+    if (email_addresses?.[0]?.email_address) {
+      updates.email = email_addresses[0].email_address;
+    }
+
+    const { error } = await supabase.from("user").update(updates).eq("id", id);
+
+    if (error) {
+      return new Response(`Error al actualizar usuario: ${error.message}`, {
+        status: 500,
+      });
+    }
   }
 
   if (eventType === "user.deleted") {
     const { id } = evt.data;
 
-    await supabase.from("users").delete().eq("id", id);
+    const { error } = await supabase.from("user").delete().eq("id", id);
+
+    if (error) {
+      return new Response(`Error al eliminar usuario: ${error.message}`, {
+        status: 500,
+      });
+    }
   }
 
   return new Response("", { status: 200 });
