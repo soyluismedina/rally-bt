@@ -7,8 +7,11 @@ export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SIGNING_SECRET;
 
   if (!WEBHOOK_SECRET) {
-    return new Response(
-      "Error: Por favor añade el CLERK_WEBHOOK_SIGNING_SECRET en los .env",
+    return Response.json(
+      {
+        error:
+          "Error: Por favor añade el CLERK_WEBHOOK_SIGNING_SECRET en los .env",
+      },
       { status: 500 },
     );
   }
@@ -19,7 +22,10 @@ export async function POST(req: Request) {
   const svix_signature = headerPayload.get("svix-signature");
 
   if (!svix_id || !svix_timestamp || !svix_signature) {
-    return new Response("Error: Faltan headers de Svix", { status: 400 });
+    return Response.json(
+      { error: "Error: Faltan headers de Svix" },
+      { status: 400 },
+    );
   }
 
   const payload = await req.json();
@@ -34,7 +40,7 @@ export async function POST(req: Request) {
       "svix-signature": svix_signature,
     }) as WebhookEvent;
   } catch (err) {
-    return new Response("Error: Firma no válida", { status: 400 });
+    return Response.json({ error: "Firma no válida" }, { status: 400 });
   }
 
   const eventType = evt.type;
@@ -52,9 +58,12 @@ export async function POST(req: Request) {
     });
 
     if (error) {
-      return new Response(`Error al crear usuario: ${error.message}`, {
-        status: 500,
-      });
+      return Response.json(
+        { error: `Error al crear usuario: ${error.message}` },
+        {
+          status: 500,
+        },
+      );
     }
   }
 
@@ -73,9 +82,12 @@ export async function POST(req: Request) {
     const { error } = await supabase.from("user").update(updates).eq("id", id);
 
     if (error) {
-      return new Response(`Error al actualizar usuario: ${error.message}`, {
-        status: 500,
-      });
+      return Response.json(
+        { error: `Error al actualizar usuario: ${error.message}` },
+        {
+          status: 500,
+        },
+      );
     }
   }
 
@@ -85,11 +97,14 @@ export async function POST(req: Request) {
     const { error } = await supabase.from("user").delete().eq("id", id);
 
     if (error) {
-      return new Response(`Error al eliminar usuario: ${error.message}`, {
-        status: 500,
-      });
+      return Response.json(
+        { error: `Error al eliminar usuario: ${error.message}` },
+        {
+          status: 500,
+        },
+      );
     }
   }
 
-  return new Response("", { status: 200 });
+  return Response.json({}, { status: 200 });
 }
