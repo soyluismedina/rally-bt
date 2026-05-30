@@ -3,6 +3,7 @@
 import { Match } from "@/types/matches";
 import { useMemo } from "react";
 import StandingsTable from "./StandingsTable";
+import { formatDate } from "@/lib/formatDate";
 
 type Standing = {
   duplaId: string;
@@ -88,7 +89,7 @@ export default function ResultsView({
       .sort(([a], [b]) => a - b)
       .map(([round, ms]) => ({ round, matches: ms }));
   }, [matches]);
-
+  console.log(rally?.date);
   return (
     <div className="space-y-8">
       {rally?.name && (
@@ -98,7 +99,7 @@ export default function ResultsView({
           </h1>
           {rally.date && (
             <p className="text-sm text-slate-500 mt-1">
-              {new Date(rally.date).toLocaleDateString("es")}
+              {formatDate(rally.date)}
               {rally.place ? ` · ${rally.place}` : null}
             </p>
           )}
@@ -138,8 +139,7 @@ export default function ResultsView({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {ms.map((m) => {
                     const c = courtColors[m.court % courtColors.length];
-                    const isPlayed =
-                      m.score_1 !== null && m.score_2 !== null;
+                    const isPlayed = m.score_1 !== null && m.score_2 !== null;
                     return (
                       <div
                         key={m.id}
